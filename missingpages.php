@@ -185,7 +185,7 @@ if ($action == "view") {
 			$scanurl_attendance = new moodle_url("/local/paperattendance/missingpages.php", array(
 					"action" => "scan",
 					"pdfname" => $miss->pdfname,
-					"page" => ($miss->pagenum +1)
+					"page" => ($miss->pagenum)
 			));
 			$scanicon_attendance = new pix_icon("e/new_document", get_string('see', 'local_paperattendance'));
 			$scanaction_attendance = $OUTPUT->action_icon(
@@ -203,7 +203,7 @@ if ($action == "view") {
 			$missingtable->data [] = array(
 					$counter,
 					$scanaction_attendance,
-					$miss->pagenum +1,
+					$miss->pagenum,
 					$dateconverted,
 					$username,
 					$deleteactionmissing . $editactionmissing);
@@ -215,6 +215,9 @@ if ($action == "view") {
 		echo $OUTPUT->header();
 		echo $OUTPUT->heading(get_string("viewmissingtitle", "local_paperattendance"));
 
+		$totalmissing = get_string('totalmissing', 'local_paperattendance');
+		echo("<p> $totalmissing: $countmissing </p>");
+
 		echo html_writer::table($missingtable);
 		//displays de pagination bar
 		echo $OUTPUT->paging_bar($countmissing, $page, $perpage,
@@ -223,6 +226,12 @@ if ($action == "view") {
 
 }
 if ($action == "edit") {
+	/*
+	Honestly, this is a clusterfuck.
+	You get to editing by clicking "edit" on a pdf on the missing pages list
+	Here you fill the main fields, then when you click "confirm" javascript hides everything and creates new fields
+	it would be much nicer to just have an extra action
+	*/
 	if ($sesspageid == null) {
 		print_error(get_string("sessdoesnotexist", "local_attendance"));
 		$action = "view";
@@ -234,9 +243,6 @@ if ($action == "edit") {
 			$path = $CFG -> dataroot. "/temp/local/paperattendance";
 			$attendancepdffile = $path . "/print/paperattendance_".$sesspageid."_".$timepdf.".pdf";
 
-			//$pdfpath = $CFG -> dataroot. "/temp/local/paperattendance/unread/".$session->pdfname;
-			//$viewerstart = $session->pagenum + 1;
-
 			$pdf = new FPDI();
 			$hashnamesql = "SELECT contenthash
 							FROM {files}
@@ -247,7 +253,7 @@ if ($action == "edit") {
 				$f1 = substr($newpdfname, 0 , 2);
 				$f2 = substr($newpdfname, 2, 2);
 				$filepath = $f1."/".$f2."/".$newpdfname;
-				$pages = $session->pagenum + 1;
+				$pages = $session->pagenum;
 
 				$originalpdf = $CFG -> dataroot. "/filedir/".$filepath;
 					
@@ -300,15 +306,15 @@ if ($action == "edit") {
 			/*Inputs of the form to edit a missing page plus the modals help buttons*/
 				
 			//Input for the Shortname of the course like : 2113-V-ECO121-1-1-2017
-			$inputs = html_writer::div('<label for="course">'.get_string("courseshortname", "local_paperattendance").'</label><input type="text" class="form-control" id="course" placeholder="2113-V-ECO121-1-1-2017"><button id="sn" type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#shortnamemodal">?</button>',"form-group", array("style"=>"float:left; margin-left:10%"));
+			$inputs = html_writer::div('<label for="course">'.get_string("courseshortname", "local_paperattendance").'</label><input type="text" class="form-control" id="course" placeholder="2113-V-ECO121-1-1-2017"><button id="sn" type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#shortnamemodal">?</button>',"form-group-input", array("style"=>"float:left; margin-left:10%"));
 			//Input for the Date of the list like: 01-08-2017
-			$inputs .= html_writer::div('<label for="date">'.get_string("datemiss", "local_paperattendance").'</label><input type="text" class="form-control" id="date" placeholder="01-08-2017"><button id="d" type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#datemodal">?</button>',"form-group", array("style"=>"float:left; margin-left:10%"));
+			$inputs .= html_writer::div('<label for="date">'.get_string("datemiss", "local_paperattendance").'</label><input type="text" class="form-control" id="date" placeholder="01-08-2017"><button id="d" type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#datemodal">?</button>',"form-group-input", array("style"=>"float:left; margin-left:10%"));
 			//Input for the time of the module of the session like: 16:30
-			$inputs .= html_writer::div('<label for="module">'.get_string("modulehourmiss", "local_paperattendance").'</label><input type="text" class="form-control" id="module" placeholder="16:30"><button id="m" type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#modulemodal">?</button>',"form-group", array("style"=>"float:left; margin-left:10%"));
+			$inputs .= html_writer::div('<label for="module">'.get_string("modulehourmiss", "local_paperattendance").'</label><input type="text" class="form-control" id="module" placeholder="16:30"><button id="m" type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#modulemodal">?</button>',"form-group-input", array("style"=>"float:left; margin-left:10%"));
 			//Input for the list begin number like: 27
-			$inputs .= html_writer::div('<label for="begin">'.get_string("listbeginmiss", "local_paperattendance").'</label><input type="text" class="form-control" id="begin" placeholder="27"><button id="b" type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#beginmodal">?</button>',"form-group", array("style"=>"float:left; margin-left:10%"));
+			$inputs .= html_writer::div('<label for="begin">'.get_string("listbeginmiss", "local_paperattendance").'</label><input type="text" class="form-control" id="begin" placeholder="27"><button id="b" type="button" class="btn btn-info btn-xs" data-toggle="modal" data-target="#beginmodal">?</button>',"form-group-input", array("style"=>"float:left; margin-left:10%"));
 			//Input fot the submit button of the form
-			$inputs .= html_writer::div('<button type="submit" id="confirm" class="btn btn-default">'.get_string("continue", "local_paperattendance").'</button>',"form-group", array("style"=>"float:right; margin-right:5%; margin-top:3%;"));
+			$inputs .= html_writer::div('<button type="submit" id="confirm" class="btn btn-default">'.get_string("continue", "local_paperattendance").'</button>',"form-group-input", array("style"=>"float:right; margin-left:5%; margin-top:3%;"));
 				
 			//We now create de four help modals
 			$shortnamemodal = '<div class="modal fade" id="shortnamemodal" role="dialog" style="width: 50vw; z-index: -10;">
@@ -364,10 +370,10 @@ if ($action == "edit") {
 							    </div>
 							  </div>';
 				
-			$inputs .= html_writer::div($shortnamemodal, "form-group");
-			$inputs .= html_writer::div($datemodal, "form-group");
-			$inputs .= html_writer::div($modulemodal, "form-group");
-			$inputs .= html_writer::div($beginmodal, "form-group");
+			$inputs .= html_writer::div($shortnamemodal, "form-group-input");
+			$inputs .= html_writer::div($datemodal, "form-group-input");
+			$inputs .= html_writer::div($modulemodal, "form-group-input");
+			$inputs .= html_writer::div($beginmodal, "form-group-input");
 		}
 		else {
 			print_error(get_string("missingpagesdoesnotexist", "local_paperattendance"));
@@ -382,18 +388,9 @@ if ($action == "edit") {
 	echo $OUTPUT->header();
 	echo $OUTPUT->heading(get_string("missingpagestitle", "local_paperattendance"));
 
-	//Here we agregate some css style for the placeholders form
-	echo html_writer::div('<style>
-							.form-control::-webkit-input-placeholder { color: lightgrey; }  /* WebKit, Blink, Edge */
-							.form-control:-moz-placeholder { color: lightgrey; }  /* Mozilla Firefox 4 to 18 */
-							.form-control::-moz-placeholder { color: lightgrey; }  /* Mozilla Firefox 19+ */
-							.form-control:-ms-input-placeholder { color: lightgrey; }  /* Internet Explorer 10-11 */
-							.form-control::-ms-input-placeholder { color: lightgrey; }  /* Microsoft Edge *
-							</style>');
-	echo html_writer::div(get_string("missingpageshelp","local_paperattendance"),"alert alert-info", array("role"=>"alert", "id"=>"alerthelp"));
   	$pdfarea = html_writer::div($viewerpdf,"col-md-12", array( "id"=>"pdfviewer"));
   	$inputarea = html_writer::div($inputs,"col-sm-12 row", array( "id"=>"inputs"));
- 	echo html_writer::div($inputarea.$pdfarea, "form-group");
+ 	echo html_writer::div($inputarea.$pdfarea, "form-group-input");
  	
  	//Add back button 
  	$backurl = new moodle_url("/local/paperattendance/missingpages.php", array(
@@ -480,6 +477,8 @@ echo $OUTPUT->footer();
 </script>
 
 <script>
+//check here to fix continue button
+
 var sessinfo = [];
 //When submit button in the form is clicked
 $( "#confirm" ).on( "click", function() {
@@ -491,16 +490,26 @@ $( "#confirm" ).on( "click", function() {
 	var pdfviewer = '<?php echo $viewerpdftres; ?>';
 	var backbutton = '<?php echo preg_replace("/[\r\n|\n|\r]+/", " ", $viewbackbutton); ?>';
 	//Validate the four fields in the form
-	if (!course.val() || !date.val() || !module.val() || !begin.val() || (parseFloat(begin.val())-1+26)%26 != 0 || date.val() === date.val().split('-')[0] || module.val() === module.val().split(':')[0]) {
+	if 
+	(
+		!course.val() || 
+		!date.val() || 
+		!module.val() || 
+		!begin.val() || 
+		(parseFloat(begin.val())-1+26)%26 != 0 
+		|| date.val() === date.val().split('-')[0] 
+		|| module.val() === module.val().split(':')[0]
+	) 
+	{
 	    alert("Por favor, rellene todos los campos correctamente");
 	}
-	else {
+	else 
+	{
 		//AJAX to get the students list
 		$.ajax({
 			    type: 'GET',
-			    url: 'ajax/ajaxquerys.php',
+			    url: 'ajax/getliststudentspage.php',
 			    data: {
-				      'action' : 'getliststudentspage',
 				      'result' : course.val(),
 				      'begin' : parseFloat(begin.val()),
 				      'module' : module.val(),
@@ -520,9 +529,8 @@ $( "#confirm" ).on( "click", function() {
 						//AJAX to check if the page was processed
 			        	$.ajax({
 			        	    type: 'POST',
-			        	    url: 'ajax/ajaxquerys.php',
+			        	    url: 'ajax/checkprocesspage.php',
 			        	    data: {
-			        		      'action' : 'checkprocesspage',
 			        		      'sessinfo' : JSON.stringify(sessinfo)
 			        	    	},
 			        	    success: function (responsetwo) {
@@ -540,7 +548,7 @@ $( "#confirm" ).on( "click", function() {
 			        	        	console.log(537);	
 			        	        	$("#backbutton").empty();
 
-                                    $(".form-group").addClass('row');
+                                    $(".form-group-input").addClass('row');
 
 			    					$("#inputs").empty();
 			    					$("#inputs").removeClass("row");
@@ -564,7 +572,7 @@ $( "#confirm" ).on( "click", function() {
 			    			        });
 
 			    			        $("#inputs").append("</tbody></table>");
-                                    $(".form-group").append('<div class="col-md-12" align="center" id="savebutton"><button class="btn btn-info savestudentsattendance" style="margin-bottom:5%; margin-top:5%;">Guardar Asistencia</button></div>');
+                                    $(".form-group-input").append('<div class="col-md-12" align="center" id="savebutton"><button class="btn btn-info savestudentsattendance" style="margin-bottom:5%; margin-top:5%;">Guardar Asistencia</button></div>');
 
 			    		    		$("#backbutton").append(backbutton);
 
@@ -658,9 +666,8 @@ function RefreshSomeEventListener() {
 		$.ajax({
 		    type: 'GET',
 		    dataType:'JSON',
-		    url: 'ajax/ajaxquerys.php',
+		    url: 'ajax/savestudentsattendance.php',
 		    data: {
-			      'action' : 'savestudentsattendance',
 			      'sessinfo' : JSON.stringify(sessinfo),
 			      'studentsattendance' : JSON.stringify(studentsattendance)
 		    	},
