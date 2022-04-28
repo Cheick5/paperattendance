@@ -21,6 +21,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use mod_lti\local\ltiservice\response;
+
 // Define whether the pdf has been processed or not 
 define('PAPERATTENDANCE_STATUS_UNREAD', 0); 	//not processed
 define('PAPERATTENDANCE_STATUS_PROCESSED', 1); 	//already processed
@@ -1830,3 +1832,55 @@ function paperattendance_curl($url, $fields, $log = true)
 
     return $result;
 }
+
+ /**
+ * Función para obtener los modulos de papperattendance como string
+ */
+function paperattendance_get_modules(){
+
+	$url = "https://api-acad-sess.uai.cl/api/Login";
+
+	$ch = curl_init($url);
+	
+	// Preparamos el request json
+	$payload = json_encode(array(
+		'Token' => 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJleHAiOjE2NDc4ODQ4NzMsImlzcyI6IldlYmN1cnNvcy51'));
+
+	//Añadir la string json a el post
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+
+	// Setear el contenido a application/json
+	curl_setopt($ch, CURLOPT_HTTPHEADER, array('x-api-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJleHAiOjE2NDc4ODQ4NzMsImlzcyI6IldlYmN1cnNvcy51', 'Content-Type: application/json'));
+
+	//Devolver la respuesto a string, en vez de "outputing"
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+	// Hacer el post request
+	$result = curl_exec($ch);
+
+	// Cerrar el curl
+	curl_close($ch);
+
+	$response = json_decode($result, true);
+	$token = $response["token"];
+
+
+
+	//Iniciamos el curl hacia la api de la universidad, ahora para usar el token obtenido con el curl anterior
+	$ch = curl_init('https://api-acad-sess.uai.cl/api/Secciones/GetModulosSeccion/1');
+	
+	// Para devolver los modulos como una string
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	
+	//Ponemos los heaaders de la autorización
+	curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+		'Content-Type: application/json',
+		'Authorization: Bearer ' . $token
+	));
+	
+	// ejecutamos el curl
+	$data = curl_exec($ch);
+	curl_close($ch);
+
+	return ($data);
+}	
