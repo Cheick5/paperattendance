@@ -1835,22 +1835,48 @@ function paperattendance_curl($url, $fields, $log = true)
 
  /**
  * Función para obtener los modulos de papperattendance como string
+ * @param string $seccion
+ * 					el idnumber de la seccion
+ * 
+ * TODO:
+ * - agregar mecanismo de retry si falla
+ * - agregar cache de los modulos en nuestra bbdd para no tener
+ * 		 que llamar a omega todo el rato
+ * - agregar cache para el token que se nos da tras hacer login
+ * 		 para no tener que volver a hacer login si se vuelve a 
+ * 		 llamar en menos de x horas
  */
-function paperattendance_get_modules(){
+function paperattendance_get_modules($seccion){
 
-	$url = "https://api-acad-sess.uai.cl/api/Login";
+	// cargar configuracion
+    global $CFG;
+	$login_url = $CFG->paperattendance_sessionloginurl;
+	$sessiontoken = $CFG->paperattendance_sessiontoken;
+	$get_modulos_url = $CFG->paperattendance_sessiongetmodulesurl;
 
-	$ch = curl_init($url);
+	// comprobar que el ultimo caracter de get_modulos_url es un /
+	// si no es se le agrega uno
+	if(substr($get_modulos_url, -1) != "/"){
+		$get_modulos_url = $get_modulos_url . "/";
+	}
+
+	// se le apenda la seccion al get_modulos_url
+	$get_modulos_url = $get_modulos_url . $seccion;
+	
+
+	//////
+	// CURL 1: Login
+	/////
+	$ch = curl_init($login_url);
 	
 	// Preparamos el request json
-	$payload = json_encode(array(
-		'Token' => 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJleHAiOjE2NDc4ODQ4NzMsImlzcyI6IldlYmN1cnNvcy51'));
+	$payload = json_encode(array('Token' => $sessiontoken));
 
 	//Añadir la string json a el post
 	curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
 
 	// Setear el contenido a application/json
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array('x-api-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJleHAiOjE2NDc4ODQ4NzMsImlzcyI6IldlYmN1cnNvcy51', 'Content-Type: application/json'));
+	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
 
 	//Devolver la respuesto a string, en vez de "outputing"
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -1865,9 +1891,11 @@ function paperattendance_get_modules(){
 	$token = $response["token"];
 
 
-
+	/////
+	// CURL 2: Obtener los modulos
+	/////
 	//Iniciamos el curl hacia la api de la universidad, ahora para usar el token obtenido con el curl anterior
-	$ch = curl_init('https://api-acad-sess.uai.cl/api/Secciones/GetModulosSeccion/1');
+	$ch = curl_init($get_modulos_url);
 	
 	// Para devolver los modulos como una string
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
