@@ -211,4 +211,37 @@ if ($hassiteconfig) {
 			PARAM_TEXT
 		)
 	);
+
+	// token for authentication with intranet
+	$settings->add(
+		new admin_setting_configtext(
+			'paperattendance_sessiontoken',
+			get_string('sessiontoken', 'local_paperattendance'),
+			get_string('sessiontokentext', 'local_paperattendance'),
+			null,
+			PARAM_TEXT
+		)
+	);
+
+	// url for login to intranet
+	$settings->add(
+		new admin_setting_configtext(
+			'paperattendance_sessionloginurl',
+			get_string('sessionloginurl', 'local_paperattendance'),
+			get_string('sessionloginurltext', 'local_paperattendance'),
+			'https://api-acad-sess.uai.cl/api/Login',
+			PARAM_TEXT
+		)
+	);
+
+	// url for getting modules from intranet
+	$settings->add(
+		new admin_setting_configtext(
+			'paperattendance_sessiongetmodulesurl',
+			get_string('sessiongetmodulesur', 'local_paperattendance'),
+			get_string('sessiongetmodulesurtext', 'local_paperattendance'),
+			'https://api-acad-sess.uai.cl/api/Secciones/GetModulosSeccion/',
+			PARAM_TEXT
+		)
+	);
 }
