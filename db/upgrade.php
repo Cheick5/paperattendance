@@ -674,5 +674,22 @@ function xmldb_local_paperattendance_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2020012204, 'local', 'paperattendance');
     }
 
+    if ($oldversion < 2022050700) {
+
+        // Define field lastupdate to be added to paperattendance_module.
+        $table = new xmldb_table('paperattendance_module');
+        $field = new xmldb_field('lastupdate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'endtime');
+
+        // Conditionally launch add field lastupdate.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Paperattendance savepoint reached.
+        upgrade_plugin_savepoint(true, 2022050700, 'local', 'paperattendance');
+    }
+
+
 	return true;
+
 }

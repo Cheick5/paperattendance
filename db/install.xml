@@ -1,8 +1,5 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/paperattendance/db" VERSION="20191127" COMMENT="XMLDB file for Moodle local/paperattendance"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
->
+<?xml version="1.0" encoding="UTF-8"?>
+<XMLDB PATH="local/paperattendance/db" VERSION="20220507" COMMENT="XMLDB file for Moodle local/paperattendance" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
   <TABLES>
     <TABLE NAME="paperattendance_session" COMMENT="Default comment for local_paperattendance, please edit me">
       <FIELDS>
@@ -58,6 +55,7 @@
         <FIELD NAME="name" TYPE="char" LENGTH="45" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="initialtime" TYPE="char" LENGTH="45" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="endtime" TYPE="char" LENGTH="45" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="lastupdate" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="this field stores the last time the module was updated as a unix time int."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
