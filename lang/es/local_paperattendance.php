@@ -316,3 +316,6 @@ $string['sessionloginurltext'] = "";
 
 $string['sessiongetmodulesur'] = "URL para obtener modulos";
 $string['sessiongetmodulesurtext'] = "";
+
+$string['moduleexpiretime'] = "Cache modulos Omega";
+$string['moduleexpiretimetext'] = "Tiempo para cachear modulos Omega en minutos";

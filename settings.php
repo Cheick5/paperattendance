@@ -244,4 +244,15 @@ if ($hassiteconfig) {
 			PARAM_TEXT
 		)
 	);
+
+	// expire period for refreshing modules
+	$settings->add(
+		new admin_setting_configtext(
+			'paperattendance_moduleexpiretime',
+			get_string('moduleexpiretime', 'local_paperattendance'),
+			get_string('moduleexpiretimetext', 'local_paperattendance'),
+			1440,
+			PARAM_INT
+		)
+	);
 }
