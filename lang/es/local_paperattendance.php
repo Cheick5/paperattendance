@@ -302,3 +302,20 @@ $string['professoreditortext']="Rol Id Profesor";
 
 $string['professornoeditor']="Rol Id Ayudante Corrector";
 $string['professornoeditortext']="Rol Id Ayudante Corrector (profesornoeditor)";
+
+//processpdf cronlog
+$string['processpdf_log_path'] = "Ruta del log del procesamiento PDF";
+$string['processpdf_log_path_description'] = "Asegurese de el usuario que corre PHP tenga permiso de escritura";
+
+// New stateful API for modules
+$string['sessiontoken'] = "Token para API modulos";
+$string['sessiontokentext'] = "";
+
+$string['sessionloginurl'] = "URL para entrar en la API modulos";
+$string['sessionloginurltext'] = "";
+
+$string['sessiongetmodulesur'] = "URL para obtener modulos";
+$string['sessiongetmodulesurtext'] = "";
+
+$string['moduleexpiretime'] = "Cache modulos Omega";
+$string['moduleexpiretimetext'] = "Tiempo para cachear modulos Omega en minutos";

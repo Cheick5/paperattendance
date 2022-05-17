@@ -36,7 +36,7 @@ define('PAPERATTENDANCE_STATUS_SYNC', 2); 		//already synced with omega
 */
 function paperattendance_create_qr_image($qrstring , $path){
 		global $CFG;
-		require_once ($CFG->dirroot . '/local/paperattendance/phpqrcode/phpqrcode.php');
+		require_once("$CFG->dirroot/local/paperattendance/lib/phpqrcode/phpqrcode.php");
 
 		if (!file_exists($path)) {
 			mkdir($path, 0777, true);
@@ -209,7 +209,7 @@ function paperattendance_draw_student_list($pdf, $logofilepath, $course, $studen
 	$teachertrimmedtext = trim_text($teacherstring,30);
 	$top += 4;
 	$pdf->SetXY($left, $top);
-	$pdf->Write(1, core_text::strtoupper(get_string('teacher', 'mod_emarking') . ': ' . $teachertrimmedtext));
+	$pdf->Write(1, core_text::strtoupper(get_string('teacher', 'local_paperattendance') . ': ' . $teachertrimmedtext));
 	// Write requestor.
 	$requestortrimmedtext = trim_text($requestorinfo->firstname." ".$requestorinfo->lastname,30);
 	$top += 4;
@@ -303,7 +303,7 @@ function paperattendance_draw_student_list($pdf, $logofilepath, $course, $studen
 			$pdf->Write(1, core_text::strtoupper(get_string('course') . ': ' . $coursetrimmedtext));
 			$topprovisional += 4;
 			$pdf->SetXY($leftprovisional, $topprovisional);
-			$pdf->Write(1, core_text::strtoupper(get_string('teacher', 'mod_emarking') . ': ' . $teachertrimmedtext));
+			$pdf->Write(1, core_text::strtoupper(get_string('teacher', 'local_paperattendance') . ': ' . $teachertrimmedtext));
 			// Write requestor.
 			$topprovisional += 4;
 			$pdf->SetXY($leftprovisional, $topprovisional);
@@ -981,7 +981,7 @@ function paperattendance_sendMail($attendanceid, $courseid, $teacherid, $uploade
 	$teacher = $DB->get_record("user", array("id"=> $teacherid));
 	$userfrom = core_user::get_noreply_user();
 	$userfrom->maildisplay = true;
-	$eventdata = new stdClass();
+	$eventdata = new \core\message\message();
     if ($case == "processpdf" || $case == "nonprocesspdf"){
     	switch($case){
     		case "processpdf":
@@ -1834,53 +1834,153 @@ function paperattendance_curl($url, $fields, $log = true)
 }
 
  /**
- * Función para obtener los modulos de papperattendance como string
+ * Función para obtener los modulos de un curso de paperattendance
+ * devuelve los modulos en el mismo formato que $DB->get_records para mantener
+ * compatibilidad
+ * 
+ * @param string $courseid
+ * 				 la id de moodle del curso
+ * 				 OJO: internamente siempre usaremos el courseid, pero omega 
+ * 				 usa el idnumber. La conversion la hara esta funcion y debe ser 
+ * 				 transparente para el resto del plugin
+ * 
+ * El plan es el siguiente: en todos los lugares donde se necesiten los modulos,
+ * se llamara a esta función y esta retornara los modulos para su uso tradicional.
+ * 
+ * La funcion internamente comprobara si los modulos estan en la base de datos 
+ * (en mdl_paperattendance_module). Si no esta en la base de datos, le pide a 
+ * omega los modulos y los inserta en la base de datos.
+ * 
+ * Si los modulos estan, comprueba cuando fue la ultima vez que fue actualizados.
+ * Si desde la ultima actualizacion ha pasado menos tiempo que el tiempo de expiracion 
+ * definido en CFG, devuelve el valor encontrado en la base de datos.
+ * Si ha pasado mas tiempo, entonces pregunta nuevamente a omega y refresca
+ * los modulos de ser necesario
+ * 
+ * TODO:
+ * - formatear initialtime y endtime
+ * - agregar mecanismo de retry si falla
+ * - agregar cache para el token que se nos da tras hacer login
+ * 		 para no tener que volver a hacer login si se vuelve a 
+ * 		 llamar en menos de x horas
+ * 		 esto no deberia ser demasiado dificil, por defecto podemos intentar
+ * 		 pedir con el token anterior, si falla, volver a pedir con el nuevo token
  */
-function paperattendance_get_modules(){
+function paperattendance_get_modules($courseid){
+    global $CFG, $DB;
 
-	$url = "https://api-acad-sess.uai.cl/api/Login";
+	// wether or not to update the modules for this course
+	$update = true;
 
-	$ch = curl_init($url);
+	$omegatimeout = $CFG->paperattendance_moduleexpiretime;
+		
+	// current unix time
+	$currenttime = (new DateTime("now", core_date::get_server_timezone_object()))->getTimeStamp();
+
+	// comprobar si esta en base de datos
+	$modules = $DB->get_records("paperattendance_module", array("courseid" => $courseid));
+
+	// comprobar si esta expirado
+	// el criterio es:
+	// 		1. si el tamaño del array es 0 (no esta en la base de datos)
+	//		2. si el tiempo de expiracion + el tiempo de actualizacion es menor que el tiempo actual
+	if(sizeof($modules) > 0 && $modules[array_key_first($modules)]->lastupdate + $omegatimeout > $currenttime) {
+		$update = false;
+	}
+
+	// si esta pero esta expirado, pedir a omega los modulos 
+	if($update == true)
+	{
+		// borrar modulos existentes de este curso
+		$DB->delete_records("paperattendance_module", array("courseid" => $courseid));
+
+		// si no esta en base de datos
+		$login_url = $CFG->paperattendance_sessionloginurl;
+		$sessiontoken = $CFG->paperattendance_sessiontoken;
+		$get_modulos_url = $CFG->paperattendance_sessiongetmodulesurl;
+
+		// get idnumber
+		$idnumber = $DB->get_field("course", "idnumber", array("id" => $courseid));
+
+		// comprobar que el ultimo caracter de get_modulos_url es un /
+		// si no es se le agrega uno
+		if(substr($get_modulos_url, -1) != "/"){
+			$get_modulos_url = $get_modulos_url . "/";
+		}
+
+		// se le apenda la seccion al get_modulos_url
+		$get_modulos_url = $get_modulos_url . $idnumber;
 	
-	// Preparamos el request json
-	$payload = json_encode(array(
-		'Token' => 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJleHAiOjE2NDc4ODQ4NzMsImlzcyI6IldlYmN1cnNvcy51'));
 
-	//Añadir la string json a el post
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-
-	// Setear el contenido a application/json
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array('x-api-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJleHAiOjE2NDc4ODQ4NzMsImlzcyI6IldlYmN1cnNvcy51', 'Content-Type: application/json'));
-
-	//Devolver la respuesto a string, en vez de "outputing"
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-	// Hacer el post request
-	$result = curl_exec($ch);
-
-	// Cerrar el curl
-	curl_close($ch);
-
-	$response = json_decode($result, true);
-	$token = $response["token"];
-
-
-
-	//Iniciamos el curl hacia la api de la universidad, ahora para usar el token obtenido con el curl anterior
-	$ch = curl_init('https://api-acad-sess.uai.cl/api/Secciones/GetModulosSeccion/1');
+		//////
+		// CURL 1: Login
+		/////
+		$ch = curl_init($login_url);
 	
-	// Para devolver los modulos como una string
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	
-	//Ponemos los heaaders de la autorización
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-		'Content-Type: application/json',
-		'Authorization: Bearer ' . $token
-	));
-	
-	// ejecutamos el curl
-	$data = curl_exec($ch);
-	curl_close($ch);
+		// Preparamos el request json
+		$payload = json_encode(array('Token' => $sessiontoken));
 
-	return ($data);
+		//Añadir la string json a el post
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+
+		// Setear el contenido a application/json
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+
+		//Devolver la respuesto a string, en vez de "outputing"
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+		// Hacer el post request
+		$result = curl_exec($ch);
+
+		// Cerrar el curl
+		curl_close($ch);
+
+		$response = json_decode($result, true);
+		$token = $response["token"];
+
+
+		/////
+		// CURL 2: Obtener los modulos
+		/////
+		//Iniciamos el curl hacia la api de la universidad, ahora para usar el token obtenido con el curl anterior
+		$ch = curl_init($get_modulos_url);
+	
+		// Para devolver los modulos como una string
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	
+		//Ponemos los heaaders de la autorización
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+			'Content-Type: application/json',
+			'Authorization: Bearer ' . $token
+		));
+	
+		// ejecutamos el curl
+		$data = curl_exec($ch);
+		curl_close($ch);
+
+		$omegamodules = json_decode($data, true);
+
+		$new_modules = array();
+
+		foreach ($omegamodules as $module)
+		{
+			$new_module = new stdClass();
+			$new_module->name 			= $module["moduloId"];
+			$new_module->initialtime 	= explode("T", $module["horaInicio"])[1];
+			$new_module->endtime 		= explode("T", $module["horaTermino"])[1];
+			$new_module->lastupdate 	= $currenttime;
+			$new_module->courseid 		= $courseid;
+
+			$new_modules[] = $new_module;
+		}
+		$DB->insert_records("paperattendance_module", $new_modules);
+
+		// aunque tecnicamente podemos devolver los modulos que creamos ($new_modules)
+		// estos vienen sin IDs, que los decide la bbdd
+		// podemos leer la ultima id y calcularlas nosotros, pero es mas facil leer otra vez
+		$modules = $DB->get_records("paperattendance_module", array("courseid" => $courseid));
+	}
+
+	// devolver valor guardado en base de datos
+	return $modules;
 }	

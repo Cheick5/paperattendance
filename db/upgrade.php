@@ -674,5 +674,50 @@ function xmldb_local_paperattendance_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2020012204, 'local', 'paperattendance');
     }
 
+    if ($oldversion < 2022050700) {
+
+        // Define field lastupdate to be added to paperattendance_module.
+        $table = new xmldb_table('paperattendance_module');
+        $field = new xmldb_field('lastupdate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'endtime');
+
+        // Conditionally launch add field lastupdate.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Paperattendance savepoint reached.
+        upgrade_plugin_savepoint(true, 2022050700, 'local', 'paperattendance');
+    }
+
+	if ($oldversion < 2022050800) {
+
+		// wipe modules table before continuing
+		global $DB;
+
+		$DB->delete_records('paperattendance_module');
+
+        // Define field courseid to be added to paperattendance_module.
+        $table = new xmldb_table('paperattendance_module');
+
+        $field = new xmldb_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '1', 'lastupdate');
+
+        // Conditionally launch add field courseid.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+		// Define key courseid (foreign) to be added to paperattendance_module.
+		$key = new xmldb_key('courseid', XMLDB_KEY_FOREIGN, ['courseid'], 'course', ['id']);
+		
+		// Launch add key courseid.
+		$dbman->add_key($table, $key);
+
+        // Paperattendance savepoint reached.
+        upgrade_plugin_savepoint(true, 2022050800, 'local', 'paperattendance');
+    }
+
+
+
 	return true;
+
 }

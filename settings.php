@@ -201,5 +201,58 @@ if ($hassiteconfig) {
             4,
             PARAM_INT
         )
-    );
+	);
+	$settings->add(
+		new admin_setting_configtext(
+			'paperattendance_processpdflogpath',
+			get_string('processpdf_log_path', 'local_paperattendance'),
+			get_string('processpdf_log_path_description', 'local_paperattendance'),
+			'/var/log/moodle/processpdf.log',
+			PARAM_TEXT
+		)
+	);
+
+	// token for authentication with intranet
+	$settings->add(
+		new admin_setting_configtext(
+			'paperattendance_sessiontoken',
+			get_string('sessiontoken', 'local_paperattendance'),
+			get_string('sessiontokentext', 'local_paperattendance'),
+			null,
+			PARAM_TEXT
+		)
+	);
+
+	// url for login to intranet
+	$settings->add(
+		new admin_setting_configtext(
+			'paperattendance_sessionloginurl',
+			get_string('sessionloginurl', 'local_paperattendance'),
+			get_string('sessionloginurltext', 'local_paperattendance'),
+			'https://api-acad-sess.uai.cl/api/Login',
+			PARAM_TEXT
+		)
+	);
+
+	// url for getting modules from intranet
+	$settings->add(
+		new admin_setting_configtext(
+			'paperattendance_sessiongetmodulesurl',
+			get_string('sessiongetmodulesur', 'local_paperattendance'),
+			get_string('sessiongetmodulesurtext', 'local_paperattendance'),
+			'https://api-acad-sess.uai.cl/api/Secciones/GetModulosSeccion/',
+			PARAM_TEXT
+		)
+	);
+
+	// expire period for refreshing modules
+	$settings->add(
+		new admin_setting_configtext(
+			'paperattendance_moduleexpiretime',
+			get_string('moduleexpiretime', 'local_paperattendance'),
+			get_string('moduleexpiretimetext', 'local_paperattendance'),
+			1440,
+			PARAM_INT
+		)
+	);
 }

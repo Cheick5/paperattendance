@@ -79,11 +79,9 @@ class paperattendance_print_form extends moodleform {
 		$mform->addElement("date_selector", "sessiondate", get_string('attdate', 'local_paperattendance'));
 		$mform->addElement("select", "description", get_string('descriptionselect', 'local_paperattendance'), $description);
 		$mform->addElement('html', '<div class="alert alert-info">'.get_string('modulesinfoomega','local_paperattendance').'</div>');
-		
-		$modulesquery = "SELECT * 
-				FROM {paperattendance_module} 
-				ORDER BY initialtime ASC";
-		$modules = $DB->get_records_sql($modulesquery);
+
+		$modules = paperattendance_get_modules($courseid);
+
 		$arraymodules = array();
 		foreach ($modules as $module){
 			$arraymodules[] = $mform->createElement('advcheckbox', $module->id."*".$module->initialtime."*".$module->endtime , '',$module->initialtime);	
