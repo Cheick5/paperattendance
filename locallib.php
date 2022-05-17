@@ -1966,8 +1966,8 @@ function paperattendance_get_modules($courseid){
 		{
 			$new_module = new stdClass();
 			$new_module->name 			= $module["moduloId"];
-			$new_module->initialtime 	= $module["horaInicio"];
-			$new_module->endtime 		= $module["horaTermino"];
+			$new_module->initialtime 	= explode("T", $module["horaInicio"])[1];
+			$new_module->endtime 		= explode("T", $module["horaTermino"])[1];
 			$new_module->lastupdate 	= $currenttime;
 			$new_module->courseid 		= $courseid;
 
