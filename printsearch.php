@@ -139,6 +139,10 @@ $modulesquery = "SELECT *
 				FROM {paperattendance_module}
 				ORDER BY initialtime ASC";
 $modules = $DB->get_records_sql($modulesquery);
+
+
+
+
 $modulesselect = "<select class='modulepicker' multiple><option value='no'>".get_string("selectmodules", "local_paperattendance")."</option>";
 foreach ($modules as $module){
 	$modulesselect .= "<option value='".$module->id."*".$module->initialtime."*".$module->endtime."'>".$module->initialtime."</option>";
@@ -342,9 +346,18 @@ $( document ).ready(function() {
 			    success: function (response) {
 				    var arr = response;
 				    //Pre selected modules
-				    var modulesselect = <?php echo json_encode($modulesselect);?>;	 
+					var modulesselect = arr['modules'];
 				    var selectedmodules = [];   
-					jQuery('#carttable').append("<tr class='cart-tr' courseid="+courseid+"><td>"+arr['course']+"</td><td>"+arr['description']+"</td><td><input class='datepicker' type='date' size='10' value='"+today+"' courseid='"+courseid+"'></td><td>"+modulesselect+"</td><td>"+arr['requestor']+"</td><td><i class='icon icon-remove' courseid='"+courseid+"'></i></td></tr>");
+					jQuery('#carttable').append("<tr class='cart-tr' courseid="+courseid+"><td>"+arr['course']+
+					"</td><td>"+arr['description']+"</td><td><input class='datepicker' type='date' size='10' value='"+today+
+					"' courseid='"+courseid+"'></td><td>"+modulesselect+
+					"</td><td>"+arr['requestor']+
+					"</td><td><i class='icon icon-remove' courseid='"+courseid+"'></i></td></tr>"); //Juntar en una linea despues
+
+					// crear un module select para cada curso
+
+					// Cuando apretas el carrito solo deberia salir los modulos de tal curso
+
 					if(!arr["modules"]){
 						jQuery('.cart-tr[courseid='+courseid+']').find('.modulepicker option[value="no"]').attr("selected", "selected");
 					}
@@ -604,7 +617,7 @@ $( document ).ready(function() {
     });
 
     function printListCart(lists){
-        lists.forEach(function(course){
+        lists.forEach(function(course)	{
             //Pre selected modules
             var modulesselect = <?php echo json_encode($modulesselect);?>;
             jQuery('#carttable').append("<tr class='cart-tr' courseid="+course.courseid+"><td>"+course.course+"</td><td>"+course.description+"</td><td><input class='datepicker' type='date' size='10' value='"+course.date+"' courseid='"+course.courseid+"'></td><td>"+modulesselect+"</td><td>"+course.requestor+"</td><td><i class='icon icon-remove' courseid='"+course.courseid+"'></i></td></tr>");

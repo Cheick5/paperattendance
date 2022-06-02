@@ -30,6 +30,14 @@ if ($teacherid != 1) {
     $requestorinfo = $DB->get_record("user", array("id" => $teacherid));
     $return['requestor'] = $requestorinfo->firstname . " " . $requestorinfo->lastname;
     $return['requestorid'] = $teacherid;
+
+    $modules = paperattendance_get_modules($courseid);
+    $modulesselect = "<select class='modulepicker' multiple><option value='no'>".get_string("selectmodules", "local_paperattendance");
+    foreach ($modules as $module){
+        $modulesselect .= "<option value='".$module->id."*".$module->initialtime."*".$module->endtime."'>".$module->initialtime;
+    }
+
+    $return['modules'] = json_encode($modulesselect);
 }
 
 $url = $CFG->paperattendance_omegagetmoduloshorariosurl;
