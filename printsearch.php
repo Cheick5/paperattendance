@@ -346,17 +346,13 @@ $( document ).ready(function() {
 			    success: function (response) {
 				    var arr = response;
 				    //Pre selected modules
-					var modulesselect = arr['modules'];
+					var modulesselect = arr['modules2'];
 				    var selectedmodules = [];   
 					jQuery('#carttable').append("<tr class='cart-tr' courseid="+courseid+"><td>"+arr['course']+
 					"</td><td>"+arr['description']+"</td><td><input class='datepicker' type='date' size='10' value='"+today+
 					"' courseid='"+courseid+"'></td><td>"+modulesselect+
 					"</td><td>"+arr['requestor']+
-					"</td><td><i class='icon icon-remove' courseid='"+courseid+"'></i></td></tr>"); //Juntar en una linea despues
-
-					// crear un module select para cada curso
-
-					// Cuando apretas el carrito solo deberia salir los modulos de tal curso
+					"</td><td><i class='icon icon-remove' courseid='"+courseid+"'></i></td></tr>");
 
 					if(!arr["modules"]){
 						jQuery('.cart-tr[courseid='+courseid+']').find('.modulepicker option[value="no"]').attr("selected", "selected");
